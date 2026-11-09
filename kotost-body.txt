@@ -1,0 +1,30 @@
+# Kotost Body settings. The game re-reads this file by itself (twice a second): no restart needed.
+# key = value; anything after # is a comment; delete a line to get its default back.
+
+# --- who gets the bust (drawn by the mod from the player's own skin) ---
+skin_bust = slim   # off: nobody | slim: every slim skin (3 px arms) | names: only bust_names | all: everyone
+bust_names =       # player names, comma separated: always get it, even with a wide (Steve) skin
+bust_skip =        # player names, comma separated: never get it
+
+# --- bust motion: only while walking/running and on jumps/landings, still when standing ---
+bust = 1           # 0: no motion
+walk = 2.45        # downward kick of each step (running kicks harder)
+run_pow = 0.4      # how much harder running is than walking (0 = the same)
+vary = 0.25        # how different left and right and each kick are (0 = in sync)
+sway = 0.12        # sideways kick of each step
+jump = 0.83        # kick of a jump or landing
+k = 2.0            # spring stiffness (higher = quicker)
+c = 0.75           # damping (lower = shakes longer)
+sway_k = 2.0       # sideways spring stiffness
+sway_c = 1.0       # sideways damping
+down_max = 4.0     # limit down, px
+up_max = 3.0       # limit up, px
+move_px = 0.45     # up-down shift per spring px
+turn_deg = 5       # swing about the top edge, degrees per spring px
+
+# --- your own body in first person ---
+first_person = 1   # 0: the game's usual first person
+left_arm = 1       # the model's left arm shows
+right_arm = 1      # the model's right arm and held items in 3D instead of the flat hands
+back = 0.0         # body pushed back (blocks) looking straight ahead
+back_down = 0.27   # extra push back looking down (so you never see inside your shoulders)

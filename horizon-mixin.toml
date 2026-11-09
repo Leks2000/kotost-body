@@ -1,0 +1,148 @@
+# Kotost body: a bust drawn from the skin (slim skins by default), its jiggle while walking/jumping,
+# own body, legs and arms in first person.
+# Native mod for Horizon nightly-2026-11-08-fdc87ae (docs/native-mods.md, horizon-mixins).
+[mod]
+id = "kotost_body"
+version = "0.2.0"
+priority = 100
+
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# State and physics, in horizon-client-lib's root so both crates reach it (horizon_client::kotost_body).
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/client_lib.rs"
+name = "kotost_body"
+source = "runtime.rs"
+visibility = "pub"
+
+# --- bust ---------------------------------------------------------------------------------------
+[[injection]]
+id = "bust-wearer"
+kind = "HEAD"
+target = "horizon_client::game::cosmetics::Game<'_>::cosmetics_geometry"
+helper = "bust_wearer.rs"
+bindings = [
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "own", ty = "bool", value = "own" },
+  { name = "alpha", ty = "f32", value = "alpha" },
+]
+
+[[injection]]
+id = "bust-pose"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::cosmetics::Game<'_>::cosmetics_model"
+helper = "bust_pose.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "model", ty = "&Arc<Part>", value = "model" },
+  { name = "matrix", ty = "glam::Mat4", value = "matrix" },
+  { name = "poses", ty = "&Poses", value = "poses" },
+  { name = "uv", ty = "[f32; 4]", value = "uv" },
+  { name = "light", ty = "u32", value = "light" },
+  { name = "gpu", ty = "bool", value = "gpu" },
+  { name = "bounds", ty = "Option<(glam::Vec3, glam::Vec3)>", value = "bounds" },
+  { name = "out", ty = "&mut Vec<Vertex>", value = "&mut *out" },
+]
+
+# Every player's bust from their own skin (kotost-body.txt picks who): beside the elytra layer, which
+# both the local player's model and other players' run, in third and first person.
+[[injection]]
+id = "skin-bust"
+kind = "HEAD"
+target = "horizon_client::game::perspective::Game<'_>::player_elytra_geometry"
+helper = "skin_bust.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "chest", ty = "Option<&str>", value = "chest" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "light", ty = "u32", value = "light" },
+  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# --- first person ---------------------------------------------------------------------------------
+# The game's own first-person model (shadow pass only): the head alone.
+[[injection]]
+id = "fp-shadow-head"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::perspective::Game<'_>::player_model_geometry"
+helper = "fp_shadow_head.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "alpha", ty = "f64", value = "alpha" },
+  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# The visible body, after the shadow-only span: its own player span, drawn by the camera.
+[[injection]]
+id = "fp-body"
+kind = "HEAD"
+target = "horizon_client::game::cosmetics::fx::Game<'_>::cosmetics_fx_geometry"
+helper = "fp_body.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "camera", ty = "DVec3", value = "camera" },
+  { name = "out", ty = "&mut Vec<Vertex>", value = "&mut *out" },
+]
+
+[[injection]]
+id = "fp-shown"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::perspective::Game<'_>::player_model_shown"
+helper = "fp_shown.rs"
+bindings = [{ name = "game", ty = "&crate::game::Game<'_>", value = "self" }]
+
+[[injection]]
+id = "fp-visibility"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_lib::mobs::anim::player_model_visibility"
+helper = "fp_visibility.rs"
+bindings = [
+  { name = "p", ty = "&mut Poses", value = "&mut *p" },
+  { name = "hidden", ty = "u8", value = "hidden" },
+  { name = "spectator", ty = "bool", value = "spectator" },
+]
+
+[[injection]]
+id = "fp-covered"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::cosmetics::covered"
+helper = "fp_covered.rs"
+bindings = [{ name = "slot", ty = "Slot", value = "slot" }]
+
+[[injection]]
+id = "fp-held"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::mob_blocks::Game<'_>::held_item_geometry"
+helper = "fp_held.rs"
+bindings = []
+
+[[injection]]
+id = "fp-hand"
+kind = "HEAD"
+cancellable = true
+hook = "render_hand"
+hook_version = 1
+helper = "fp_hand.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "fp-head-item"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::mob_blocks::Game<'_>::head_item_geometry"
+helper = "fp_head_item.rs"
+bindings = []
