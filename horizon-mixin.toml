@@ -1,9 +1,9 @@
-# Kotost body: a bust drawn from the skin (slim skins by default), its jiggle while walking/jumping,
+# Kotost body: a bust drawn from the skin (your own player by default), its jiggle while walking/jumping,
 # own body, legs and arms in first person.
 # Native mod for Horizon nightly-2026-11-08-fdc87ae (docs/native-mods.md, horizon-mixins).
 [mod]
 id = "kotost_body"
-version = "0.2.0"
+version = "0.2.1"
 priority = 100
 
 [compatibility]

@@ -2,8 +2,9 @@
 
 A native mod for [Horizon](https://playhorizon.dev) (Minecraft: Java Edition 26.3 rewritten in Rust).
 
-- **A bust for players with a slim skin**, drawn by the mod itself and textured from each player's own skin:
-  no cosmetics item, no resource pack, no server plugin. You see it on everyone, yourself included.
+- **A bust for your own player**, drawn by the mod itself and textured from your own skin: no cosmetics item, no
+  resource pack, no server plugin. Other players are left as they look unless you name them or choose slim skins
+  or everyone in the settings (it only changes what you see on your screen).
 - **It only moves when you move**: a small spring bounce on every step (harder when running) and on jumps and
   landings. Standing still, it stays still. Left and right have their own springs and never move quite in sync.
 - **Your own body in first person**: look down and you see your body, legs and both arms in 3D, holding your items,
@@ -55,7 +56,7 @@ Who gets the bust:
 
 | Key | Default | What it does |
 | --- | --- | --- |
-| `skin_bust` | `slim` | `off`: nobody. `slim`: every player with a slim skin (3-pixel arms). `names`: only the players in `bust_names`. `all`: everyone. |
+| `skin_bust` | `me` | `me`: only you (plus `bust_names`). `off`: nobody. `names`: only the players in `bust_names`. `slim`: every player with a slim skin (3-pixel arms). `all`: everyone. |
 | `bust_names` | empty | Player names, comma separated, that always get it, even with a wide skin. |
 | `bust_skip` | empty | Player names, comma separated, that never get it. |
 

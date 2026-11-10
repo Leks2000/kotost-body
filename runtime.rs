@@ -77,6 +77,9 @@ fn random(rng: &mut u64) -> f32 {
 pub enum Auto {
     /// Nobody: only players wearing a bust cosmetic item.
     Off,
+    /// Only the player at this game (their own model), plus `bust_names`, minus `bust_skip`: the default,
+    /// so other players are left as they look unless the settings ask for them.
+    Me,
     /// Players with a slim (3 px arm) skin, plus `bust_names`, minus `bust_skip`.
     Slim,
     /// Only the players in `bust_names`.
@@ -126,7 +129,7 @@ impl Default for Tune {
     fn default() -> Self {
         Tune {
             bust: true,
-            auto: Auto::Slim,
+            auto: Auto::Me,
             debug: false,
             k: 2.0,
             c: 0.75,
@@ -222,7 +225,7 @@ const DEFAULT_FILE: &str = r#"# Kotost Body settings. The game re-reads this fil
 # key = value; anything after # is a comment; delete a line to get its default back.
 
 # --- who gets the bust (drawn by the mod from the player's own skin) ---
-skin_bust = slim   # off: nobody | slim: every slim skin (3 px arms) | names: only bust_names | all: everyone
+skin_bust = me     # me: only you | off: nobody | names: only bust_names | slim: every slim skin (3 px arms) | all: everyone
 bust_names =       # player names, comma separated: always get it, even with a wide (Steve) skin
 bust_skip =        # player names, comma separated: never get it
 
@@ -271,7 +274,8 @@ fn parse(text: &str) -> (Tune, Vec<String>, Vec<String>) {
                     "0" | "off" | "no" | "none" => Auto::Off,
                     "names" | "list" => Auto::Names,
                     "all" | "everyone" => Auto::All,
-                    _ => Auto::Slim,
+                    "slim" => Auto::Slim,
+                    _ => Auto::Me,
                 };
                 continue;
             }
@@ -542,6 +546,7 @@ pub fn skin_bust_wanted(key: u32, slim: bool, names: impl FnOnce() -> Vec<(u32, 
         match auto {
             Auto::Off => false,
             Auto::Names => named(&c.names),
+            Auto::Me => key == u32::MAX || named(&c.names),
             Auto::Slim => slim || named(&c.names),
             Auto::All => true,
         }
