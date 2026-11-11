@@ -1,9 +1,9 @@
-# Kotost body: a bust drawn from the skin (your own player by default), its jiggle while walking/jumping,
-# own body, legs and arms in first person.
+# Kotost body: a bust drawn from the skin (slim skins by default), its jiggle while walking/jumping, an
+# hourglass body for every bust wearer, own body, legs and arms in first person.
 # Native mod for Horizon nightly-2026-11-08-fdc87ae (docs/native-mods.md, horizon-mixins).
 [mod]
 id = "kotost_body"
-version = "0.2.1"
+version = "0.3.2"
 priority = 100
 
 [compatibility]
@@ -62,6 +62,31 @@ bindings = [
   { name = "partial", ty = "f32", value = "partial" },
   { name = "light", ty = "u32", value = "light" },
   { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# --- the hourglass body ---------------------------------------------------------------------------
+# The mob being posed, for player_model_visibility below (which leaves an hourglass player's torso
+# box undrawn; skin-bust draws the hourglass in its place).
+[[injection]]
+id = "body-shape-mob"
+kind = "HEAD"
+target = "horizon_client_lib::mobs::anim::setup"
+helper = "body_shape_mob.rs"
+bindings = [
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "s", ty = "&State", value = "s" },
+]
+
+# First person: the arm eating or drinking brings the item up before the face and works it (the game's own
+# flat-hand animation is gone with the model's 3D arms).
+[[injection]]
+id = "fp-eat"
+kind = "HEAD"
+target = "horizon_client_lib::mobs::anim::bob"
+helper = "fp_eat.rs"
+bindings = [
+  { name = "p", ty = "&mut Poses", value = "&mut *p" },
+  { name = "n", ty = "&str", value = "n" },
 ]
 
 # --- first person ---------------------------------------------------------------------------------

@@ -14,6 +14,10 @@ fn kotost_bust_pose(
         return std::ops::ControlFlow::Continue(());
     }
     kb::mark_item_bust();
+    // Another mod (a dress) draws this wearer's bust in its own clothes.
+    if kb::current_covered() {
+        return std::ops::ControlFlow::Break(None);
+    }
     let Some(jiggle) = kb::current() else {
         return std::ops::ControlFlow::Continue(());
     };

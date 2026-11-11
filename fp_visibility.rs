@@ -1,5 +1,7 @@
 fn kotost_fp_visibility(p: &mut Poses, hidden: u8, spectator: bool) -> std::ops::ControlFlow<()> {
     use crate::kotost_body::{Mode, mode};
+    // An hourglass player: the torso box undrawn (the mod draws its own), the arms a little out.
+    crate::kotost_body::shape_poses(p);
     let layers = [
         (1, "jacket"),
         (2, "left_sleeve"),
