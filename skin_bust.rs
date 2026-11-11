@@ -9,10 +9,6 @@ fn kotost_skin_bust(
 ) {
     use horizon_client::kotost_body as kb;
     use horizon_client::mobs::{anim, render};
-    // First person's shadow copy (the head alone): nothing, and no verdict either (its body is hidden).
-    if kb::mode() == kb::Mode::HeadOnly {
-        return;
-    }
     let own = game
         .player_model
         .as_ref()

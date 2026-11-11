@@ -2,9 +2,15 @@
 # key = value; anything after # is a comment; delete a line to get its default back.
 
 # --- who gets the bust (drawn by the mod from the player's own skin) ---
-skin_bust = slim   # off: nobody | slim: every slim skin (3 px arms) | names: only bust_names | all: everyone
+skin_bust = me     # me: only you | off: nobody | names: only bust_names | slim: every slim skin (3 px arms) | all: everyone
 bust_names =       # player names, comma separated: always get it, even with a wide (Steve) skin
 bust_skip =        # player names, comma separated: never get it
+
+# --- the body of every bust wearer: an hourglass (narrow waist, wider hips), their own skin stretched over it ---
+hourglass = 1      # 0: the game's box torso
+waist = 3.3        # half-width of the waist, px (the game's torso is 4)
+hips = 4.3         # half-width of the hips, px
+hip_arms = 3       # degrees the arms hang further out (so the hips don't cut into them)
 
 # --- bust motion: only while walking/running and on jumps/landings, still when standing ---
 bust = 1           # 0: no motion
@@ -22,9 +28,3 @@ up_max = 3.0       # limit up, px
 move_px = 0.45     # up-down shift per spring px
 turn_deg = 5       # swing about the top edge, degrees per spring px
 
-# --- your own body in first person ---
-first_person = 1   # 0: the game's usual first person
-left_arm = 1       # the model's left arm shows
-right_arm = 1      # the model's right arm and held items in 3D instead of the flat hands
-back = 0.0         # body pushed back (blocks) looking straight ahead
-back_down = 0.27   # extra push back looking down (so you never see inside your shoulders)

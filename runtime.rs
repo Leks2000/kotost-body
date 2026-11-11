@@ -1,10 +1,9 @@
-// Kotost body: a Horizon native mod (horizon-mixins support module, put into horizon-client-lib's root).
+// Kotost Bust (id kotost_body): a Horizon native mod (horizon-mixins support module, put into horizon-client-lib's root).
 // 1) The bust item's two parts (`bust_left`, `bust_right`) jiggle on a damped spring, driven only by walking
 //    (the leg cycle) and by the body's vertical acceleration (jump take-off, landing, steps): standing still,
 //    they settle and stay still.
-// 2) First person: the local player's body and legs are drawn (head, hat, arms and their items hidden), pushed
-//    back as the view pitches down; the shadow pass keeps only the head at the true position, so the shadow
-//    is one whole body.
+// 2) First person is its own mod (Kotost First Person): it draws the player model once more, so the bust and
+//    the hourglass body show on it by themselves; nothing is shared between the two.
 // 3) Every player the settings pick (slim skins by default) gets the bust drawn by the mod itself, textured from
 //    their own skin: no cosmetics item needed, so everyone with the mod sees it on everyone.
 // 4) Every bust wearer gets an hourglass torso (narrow waist, wider hips) with their skin stretched over it,
@@ -13,19 +12,8 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime};
-
-/// What the local player's model is being drawn for right now.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Mode {
-    /// Not ours: the game as it is.
-    Off,
-    /// First person, the shadow pass's copy at the true position: the head (and head items) only.
-    HeadOnly,
-    /// First person, the visible copy pushed back: body and legs, no head, no arms.
-    Body,
-}
 
 /// One frame's bust offsets of the wearer being drawn (model pixels, + is down), [left, right].
 #[derive(Clone, Copy, Debug, Default)]
@@ -117,14 +105,6 @@ pub struct Tune {
     /// Spring displacement to pose: pixels moved down and degrees turned, per pixel.
     pub move_px: f32,
     pub turn_deg: f32,
-    pub first_person: bool,
-    /// First person: the model's left arm (and sleeve) shows too.
-    pub left_arm: bool,
-    /// First person: the model's right arm and both held items in 3D, instead of the game's flat hands.
-    pub right_arm: bool,
-    /// First person: the body pushed back (blocks), looking ahead and the extra looking straight down.
-    pub back: f32,
-    pub back_down: f32,
     /// The hourglass body for every bust wearer: the torso narrows to `waist` and widens to `hips`
     /// (half-widths, px; the game's torso is 4), their skin stretched over it. Off: the game's box.
     pub hourglass: bool,
@@ -132,14 +112,6 @@ pub struct Tune {
     pub hips: f32,
     /// Degrees both arms hang further out, so the wider hips don't cut into them.
     pub hip_arms: f32,
-    /// First person, eating or drinking: how far the arm comes up (radians over the head's pitch), across to
-    /// the middle (radians), and the bob of each bite.
-    pub eat: bool,
-    /// Eating in first person shows the game's own hands (the food before the face) instead of the 3D arm.
-    pub eat_hand: bool,
-    pub eat_up: f32,
-    pub eat_across: f32,
-    pub eat_bob: f32,
 }
 
 impl Default for Tune {
@@ -161,26 +133,15 @@ impl Default for Tune {
             down_max: 4.0,
             move_px: 0.45,
             turn_deg: 5.0,
-            first_person: true,
-            left_arm: true,
-            right_arm: true,
-            back: 0.0,
-            back_down: 0.27,
             hourglass: true,
             waist: 3.3,
             hips: 4.3,
             hip_arms: 3.0,
-            eat: true,
-            eat_hand: true,
-            eat_up: 1.35,
-            eat_across: 0.6,
-            eat_bob: 0.16,
         }
     }
 }
 
 // Drawing runs on one thread; the locks are never held across a call into the game.
-static MODE: AtomicU8 = AtomicU8::new(0);
 static NESTED: AtomicBool = AtomicBool::new(false);
 static CURRENT: Mutex<Option<Jiggle>> = Mutex::new(None);
 static WEARERS: Mutex<Option<HashMap<u32, Wearer>>> = Mutex::new(None);
@@ -203,23 +164,6 @@ struct TuneCache {
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-}
-
-pub fn mode() -> Mode {
-    match MODE.load(Ordering::Relaxed) {
-        1 => Mode::HeadOnly,
-        2 => Mode::Body,
-        _ => Mode::Off,
-    }
-}
-
-pub fn set_mode(m: Mode) {
-    let v = match m {
-        Mode::Off => 0,
-        Mode::HeadOnly => 1,
-        Mode::Body => 2,
-    };
-    MODE.store(v, Ordering::Relaxed);
 }
 
 pub fn nested() -> bool {
@@ -277,17 +221,6 @@ up_max = 3.0       # limit up, px
 move_px = 0.45     # up-down shift per spring px
 turn_deg = 5       # swing about the top edge, degrees per spring px
 
-# --- your own body in first person ---
-first_person = 1   # 0: the game's usual first person
-left_arm = 1       # the model's left arm shows
-right_arm = 1      # the model's right arm and held items in 3D instead of the flat hands
-back = 0.0         # body pushed back (blocks) looking straight ahead
-back_down = 0.27   # extra push back looking down (so you never see inside your shoulders)
-eat = 1            # eating and drinking: the arm brings the item before your face and bobs (0: no)
-eat_hand = 1       # 1: while eating, the game's own first-person hands with the food before your face
-eat_up = 1.35      # how high the arm comes up
-eat_across = 0.6   # how far across to the middle
-eat_bob = 0.16     # the bob of each bite
 "#;
 
 fn names_of(value: &str) -> Vec<String> {
@@ -331,12 +264,7 @@ fn parse(text: &str) -> (Tune, Vec<String>, Vec<String>) {
             match key {
                 "bust" => t.bust = on,
                 "debug" => t.debug = on,
-                "first_person" => t.first_person = on,
-                "left_arm" => t.left_arm = on,
-                "right_arm" => t.right_arm = on,
                 "hourglass" => t.hourglass = on,
-                "eat" => t.eat = on,
-                "eat_hand" => t.eat_hand = on,
                 _ => {}
             }
             continue;
@@ -347,9 +275,6 @@ fn parse(text: &str) -> (Tune, Vec<String>, Vec<String>) {
         match key {
             "bust" => t.bust = n != 0.0,
             "debug" => t.debug = n != 0.0,
-            "first_person" => t.first_person = n != 0.0,
-            "left_arm" => t.left_arm = n != 0.0,
-            "right_arm" => t.right_arm = n != 0.0,
             "k" => t.k = n.clamp(0.05, 4.0),
             "c" => t.c = n.clamp(0.0, 4.0),
             "walk" => t.walk = n.clamp(0.0, 4.0),
@@ -363,17 +288,10 @@ fn parse(text: &str) -> (Tune, Vec<String>, Vec<String>) {
             "down_max" => t.down_max = n.clamp(0.0, 5.0),
             "move_px" => t.move_px = n.clamp(0.0, 2.0),
             "turn_deg" => t.turn_deg = n.clamp(0.0, 20.0),
-            "back" => t.back = n.clamp(-0.5, 1.0),
-            "back_down" => t.back_down = n.clamp(0.0, 1.0),
             "hourglass" => t.hourglass = n != 0.0,
             "waist" => t.waist = n.clamp(2.0, 4.0),
             "hips" => t.hips = n.clamp(3.5, 5.0),
             "hip_arms" => t.hip_arms = n.clamp(0.0, 15.0),
-            "eat" => t.eat = n != 0.0,
-            "eat_hand" => t.eat_hand = n != 0.0,
-            "eat_up" => t.eat_up = n.clamp(0.0, 3.0),
-            "eat_across" => t.eat_across = n.clamp(0.0, 1.5),
-            "eat_bob" => t.eat_bob = n.clamp(0.0, 1.0),
             _ => {}
         }
     }
@@ -658,78 +576,6 @@ pub fn setup_mob(m: &crate::mobs::Mob) {
     SETUP_ID.with(|c| c.set(Some(m.id)));
 }
 
-thread_local! {
-    /// The own model being posed for the first-person body eats or drinks: with the left arm, ticks in.
-    static EATING: std::cell::Cell<Option<(bool, f32)>> = const { std::cell::Cell::new(None) };
-}
-
-/// Items used with their own arm pose (bow, shield, spyglass...): not eating.
-const NOT_FOOD: [&str; 8] = [
-    "minecraft:bow",
-    "minecraft:crossbow",
-    "minecraft:trident",
-    "minecraft:spyglass",
-    "minecraft:goat_horn",
-    "minecraft:brush",
-    "minecraft:shield",
-    "minecraft:fishing_rod",
-];
-
-/// `anim::setup`'s HEAD: whether the model posed now is the own first-person body eating or drinking.
-pub fn eat_begin(m: &crate::mobs::Mob, partial: f32) {
-    let eating = (mode() == Mode::Body && m.extra.using_item > 0 && !m.extra.blocking)
-        .then(|| {
-            let item = if m.extra.using_off_hand { m.extra.off_hand.as_deref() } else { m.extra.main_hand.as_deref() };
-            let item = item?;
-            if NOT_FOOD.contains(&item) || item.ends_with("_spear") {
-                return None;
-            }
-            Some((m.main_arm_left() != m.extra.using_off_hand, m.extra.using_item as f32 + partial))
-        })
-        .flatten();
-    if mode() == Mode::Body {
-        FP_EATING.store(eating.is_some(), Ordering::Relaxed);
-    }
-    EATING.with(|c| c.set(eating));
-}
-
-/// The own first-person body is eating or drinking now (set while it is posed each frame).
-static FP_EATING: AtomicBool = AtomicBool::new(false);
-
-/// First person, eating or drinking with `eat_hand = 1`: the game's own hand animation shows instead of
-/// the model's 3D arm (the arm before the face sits behind the camera, so the food was never seen).
-pub fn fp_eating_hand() -> bool {
-    tune().eat_hand && FP_EATING.load(Ordering::Relaxed)
-}
-
-/// `anim::bob`'s HEAD (right arm, so after both arms are posed): the eating arm comes up before the face,
-/// across to the middle, and bobs as vanilla's first-person hand does (`applyEatTransform`).
-pub fn eat_arm(p: &mut crate::mobs::anim::Poses) {
-    let Some((left, ticks)) = EATING.with(std::cell::Cell::take) else {
-        return;
-    };
-    let arm = if left { "left_arm" } else { "right_arm" };
-    if !p.has(arm) || !p.has("head") {
-        return;
-    }
-    let tune = tune();
-    if !tune.eat || tune.eat_hand {
-        return;
-    }
-    let (up, across) = (tune.eat_up, tune.eat_across);
-    let x = (ticks / 4.0).clamp(0.0, 1.0);
-    let k = x * x * (3.0 - 2.0 * x);
-    // Vanilla: |cos(t / 4 * pi)| * 0.1 up and down once the hand is there.
-    let chew = if ticks > 4.0 { (ticks / 4.0 * std::f32::consts::PI).cos().abs() * tune.eat_bob } else { 0.0 };
-    let head_x = p.get("head")[3];
-    let side = if left { 1.0 } else { -1.0 };
-    let goal = [head_x - up - chew, side * across, -side * 0.12];
-    let q = p.get(arm);
-    for i in 0..3 {
-        q[3 + i] += (goal[i] - q[3 + i]) * k;
-    }
-}
-
 /// `player_model_visibility`'s HEAD: an hourglass player's model leaves its torso and jacket boxes
 /// undrawn (the mod draws the hourglass in their place), and hangs the arms a little further out.
 pub fn shape_poses(p: &mut crate::mobs::anim::Poses) {
@@ -911,18 +757,6 @@ pub fn armor_texture(chest: &str) -> Option<String> {
         other => other,
     };
     Some(format!("entity/equipment/humanoid/{asset}"))
-}
-
-/// First person: whether to draw the body.
-pub fn first_person() -> bool {
-    tune().first_person
-}
-
-/// First person: how far back (blocks) the body goes at this pitch (degrees, + looks down).
-pub fn back(pitch: f32) -> f64 {
-    let t = tune();
-    let down = pitch.to_radians().sin().max(0.0);
-    f64::from(t.back + t.back_down * down)
 }
 
 // --- the bust from the skin ------------------------------------------------------------------------

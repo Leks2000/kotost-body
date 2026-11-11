@@ -1,9 +1,10 @@
-# Kotost body: a bust drawn from the skin (slim skins by default), its jiggle while walking/jumping, an
-# hourglass body for every bust wearer, own body, legs and arms in first person.
+# Kotost Bust (id kotost_body): a bust drawn from the skin (your own by default), its jiggle while walking and
+# jumping, an hourglass body for every bust wearer, chestplates in the figure's shape.
+# First person is its own mod now: Kotost First Person (kotost_firstperson); each works alone or with the other.
 # Native mod for Horizon nightly-2026-11-08-fdc87ae (docs/native-mods.md, horizon-mixins).
 [mod]
 id = "kotost_body"
-version = "0.3.2"
+version = "0.4.0"
 priority = 100
 
 [compatibility]
@@ -65,109 +66,18 @@ bindings = [
 ]
 
 # --- the hourglass body ---------------------------------------------------------------------------
-# The mob being posed, for player_model_visibility below (which leaves an hourglass player's torso
-# box undrawn; skin-bust draws the hourglass in its place).
+# The mob being posed, for body-shape-poses below (which leaves an hourglass player's torso box undrawn;
+# skin-bust draws the hourglass in its place).
 [[injection]]
 id = "body-shape-mob"
 kind = "HEAD"
 target = "horizon_client_lib::mobs::anim::setup"
 helper = "body_shape_mob.rs"
-bindings = [
-  { name = "m", ty = "&Mob", value = "m" },
-  { name = "s", ty = "&State", value = "s" },
-]
-
-# First person: the arm eating or drinking brings the item up before the face and works it (the game's own
-# flat-hand animation is gone with the model's 3D arms).
-[[injection]]
-id = "fp-eat"
-kind = "HEAD"
-target = "horizon_client_lib::mobs::anim::bob"
-helper = "fp_eat.rs"
-bindings = [
-  { name = "p", ty = "&mut Poses", value = "&mut *p" },
-  { name = "n", ty = "&str", value = "n" },
-]
-
-# --- first person ---------------------------------------------------------------------------------
-# The game's own first-person model (shadow pass only): the head alone.
-[[injection]]
-id = "fp-shadow-head"
-kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::perspective::Game<'_>::player_model_geometry"
-helper = "fp_shadow_head.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "camera", ty = "glam::DVec3", value = "camera" },
-  { name = "alpha", ty = "f64", value = "alpha" },
-  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
-]
-
-# The visible body, after the shadow-only span: its own player span, drawn by the camera.
-[[injection]]
-id = "fp-body"
-kind = "HEAD"
-target = "horizon_client::game::cosmetics::fx::Game<'_>::cosmetics_fx_geometry"
-helper = "fp_body.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "camera", ty = "DVec3", value = "camera" },
-  { name = "out", ty = "&mut Vec<Vertex>", value = "&mut *out" },
-]
+bindings = [{ name = "m", ty = "&Mob", value = "m" }]
 
 [[injection]]
-id = "fp-shown"
+id = "body-shape-poses"
 kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::perspective::Game<'_>::player_model_shown"
-helper = "fp_shown.rs"
-bindings = [{ name = "game", ty = "&crate::game::Game<'_>", value = "self" }]
-
-[[injection]]
-id = "fp-visibility"
-kind = "HEAD"
-cancellable = true
 target = "horizon_client_lib::mobs::anim::player_model_visibility"
-helper = "fp_visibility.rs"
-bindings = [
-  { name = "p", ty = "&mut Poses", value = "&mut *p" },
-  { name = "hidden", ty = "u8", value = "hidden" },
-  { name = "spectator", ty = "bool", value = "spectator" },
-]
-
-[[injection]]
-id = "fp-covered"
-kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::cosmetics::covered"
-helper = "fp_covered.rs"
-bindings = [{ name = "slot", ty = "Slot", value = "slot" }]
-
-[[injection]]
-id = "fp-held"
-kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::mob_blocks::Game<'_>::held_item_geometry"
-helper = "fp_held.rs"
-bindings = []
-
-[[injection]]
-id = "fp-hand"
-kind = "HEAD"
-cancellable = true
-hook = "render_hand"
-hook_version = 1
-helper = "fp_hand.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
-]
-
-[[injection]]
-id = "fp-head-item"
-kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::mob_blocks::Game<'_>::head_item_geometry"
-helper = "fp_head_item.rs"
-bindings = []
+helper = "body_shape_poses.rs"
+bindings = [{ name = "p", ty = "&mut Poses", value = "&mut *p" }]
