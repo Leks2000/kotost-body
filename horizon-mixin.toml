@@ -1,14 +1,14 @@
 # Kotost Bust (id kotost_body): a bust drawn from the skin (your own by default), its jiggle while walking and
 # jumping, an hourglass body for every bust wearer, chestplates in the figure's shape.
 # First person is its own mod now: Kotost First Person (kotost_firstperson); each works alone or with the other.
-# Native mod for Horizon nightly-2026-11-08-fdc87ae (docs/native-mods.md, horizon-mixins).
+# Native mod for Horizon (docs/native-mods.md, horizon-mixins): builds on nightly-2026-11-08-fdc87ae and 2026-11-13-9f42064.
 [mod]
 id = "kotost_body"
-version = "0.4.0"
+version = "0.4.1"
 priority = 100
 
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # State and physics, in horizon-client-lib's root so both crates reach it (horizon_client::kotost_body).
 [[module]]
@@ -19,34 +19,8 @@ source = "runtime.rs"
 visibility = "pub"
 
 # --- bust ---------------------------------------------------------------------------------------
-[[injection]]
-id = "bust-wearer"
-kind = "HEAD"
-target = "horizon_client::game::cosmetics::Game<'_>::cosmetics_geometry"
-helper = "bust_wearer.rs"
-bindings = [
-  { name = "m", ty = "&Mob", value = "m" },
-  { name = "own", ty = "bool", value = "own" },
-  { name = "alpha", ty = "f32", value = "alpha" },
-]
-
-[[injection]]
-id = "bust-pose"
-kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::cosmetics::Game<'_>::cosmetics_model"
-helper = "bust_pose.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "model", ty = "&Arc<Part>", value = "model" },
-  { name = "matrix", ty = "glam::Mat4", value = "matrix" },
-  { name = "poses", ty = "&Poses", value = "poses" },
-  { name = "uv", ty = "[f32; 4]", value = "uv" },
-  { name = "light", ty = "u32", value = "light" },
-  { name = "gpu", ty = "bool", value = "gpu" },
-  { name = "bounds", ty = "Option<(glam::Vec3, glam::Vec3)>", value = "bounds" },
-  { name = "out", ty = "&mut Vec<Vertex>", value = "&mut *out" },
-]
+# A bust cosmetic item's jiggle (items with bust_left/bust_right parts) is the owner-only add-on kotost_body_item:
+# the cosmetics' drawing functions it hooks differ between Horizon versions.
 
 # Every player's bust from their own skin (kotost-body.txt picks who): beside the elytra layer, which
 # both the local player's model and other players' run, in third and first person.

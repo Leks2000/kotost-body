@@ -95,8 +95,7 @@ was drawn and if not, why. Leave it off when you play.
 `kotost-body.txt` in this repository is the file the mod writes, with every key at its default. The first-person
 keys of 0.3 (`first_person`, `left_arm`, ...) moved to Kotost First Person, which carries them over on its first run.
 
-A player who already wears a bust cosmetic item (parts named `bust_left` and `bust_right`) keeps theirs: the mod
-draws no second one, and that item bounces with the same spring. The companion bot `Bolvanchik` always gets the
+The companion bot `Bolvanchik` always gets the
 figure (`skin_bust = off` and `bust_skip` still turn it off).
 
 ## For other mods
@@ -116,9 +115,11 @@ one-pixel rows, each as wide as the figure there, cut from the skin where the ga
 
 Hooks (all `HEAD`, see `horizon-mixin.toml`): `player_elytra_geometry` draws the bust and the figure on every
 player, `anim::setup` and `player_model_visibility` leave the game's torso box undrawn for a shaped player,
-`cosmetics_geometry` and `cosmetics_model` move a bust item. State and physics live in `runtime.rs`.
+State and physics live in `runtime.rs`. (Up to 0.4.0 the mod also bounced a bust cosmetic item, through Horizon's
+`cosmetics_geometry` and `cosmetics_model`; Nightly 2026-11-13 draws cosmetics elsewhere, so 0.4.1 hooks only
+functions every recent Horizon has.)
 
-Built for Horizon `fdc87ae` (Nightly 2026-11-08); the launcher pins that commit when it builds the mod.
+Builds on Horizon `fdc87ae` (Nightly 2026-11-08) and `9f42064` (Nightly 2026-11-13) from the same source.
 
 ## License
 
